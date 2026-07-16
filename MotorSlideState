@@ -1,0 +1,78 @@
+using System;
+using System.Collections;
+using UnityEngine;
+
+public class Motor_Slide_State : Motor_Base_State
+{
+    public Motor_Slide_State(Motor_Traits traits) : base(traits){}
+    public override void OnEnter()
+    {
+        base.OnEnter();
+        print("Motor.OnEnter()==>Slide_State");
+    }
+    public override void OnUpdate()
+    {
+        base.OnUpdate();
+        StartCoroutine(timer());
+        if (data_Center.jumps.Count > 0) { traits.state_Machine.ChangeState(Motor_State_Type.Jump); }
+    }
+    public override void OnFixedUpdate()
+    {
+        base.OnFixedUpdate();
+        if (data_Center.pressedSlide) { traits.state_Machine.ChangeState(Motor_State_Type.Slide); }
+    }
+    public override void OnExit()
+    {
+        base.OnExit();
+    }
+    public override Motor_MoveMent_Data OnMoveMent()
+    {
+        Motor_MoveMent_Data data=new Motor_MoveMent_Data();
+        float moveShetab = traits.moveShetab;
+        float rotShetab = traits.rotShetab;
+        float streatSize=traits.streetSize;
+        data.record = data_Center.currentRecord + (data_Center.currentMoveSpeed * Time.deltaTime) / 3600;
+        Vector3 currentVelocity =Vector3.forward*data_Center.currentMoveSpeed;
+        data.moveSpeed = data_Center.currentMoveSpeed + traits.moveShetab * Time.deltaTime;
+        data.rotSpeed=data_Center.currentRotSpeed;
+        data.isRotClamped = true;
+        data.slerpSpeed = 12;
+        data.velocity = currentVelocity;
+        return data;
+    }
+    public  override Motor_Animation_Data OnAnimation(Transform neck, Transform body, Transform farmon) 
+    {
+        Quaternion currentNeckRotation=data_Center.currentNeckRotation;
+        Quaternion currentBodyRotation=data_Center.currentBodyRotation;
+        Quaternion currentFarmonRotation=data_Center.currentFarmonRotation;
+        float rotSpeedNormalized = data_Center.currentRotSpeed / traits.maxRotSpeed * 3;
+        //Wheel
+        neck.rotation = Quaternion.Lerp(neck.rotation, currentNeckRotation, (traits.neckRotSpeed * rotSpeedNormalized + Math.Abs(traits.controller.velocity.y)) * Time.deltaTime);
+        traits.wheelFront.localRotation *= Quaternion.Euler(Vector3.forward * data_Center.currentMoveSpeed * 10 * Time.deltaTime);
+        traits.wheelBack.localRotation *= Quaternion.Euler(Vector3.forward * data_Center.currentMoveSpeed * 10 * Time.deltaTime);
+        //
+        //
+        neck.rotation = Quaternion.Slerp(neck.rotation, currentNeckRotation, 10 * Time.deltaTime);
+        currentNeckRotation = Quaternion.Euler(traits.neckSlideDirection);
+        //
+        body.rotation = Quaternion.Slerp(body.rotation, currentBodyRotation, 10 * Time.deltaTime);
+        currentBodyRotation = Quaternion.Euler(traits.bodySlideDirection);
+        //
+        farmon.localRotation = currentFarmonRotation; Quaternion.Slerp(farmon.localRotation, currentFarmonRotation,10* Time.deltaTime);
+        currentFarmonRotation = Quaternion.Euler(traits.farmonSlideDirection);
+        body.transform.localPosition = Vector3.Lerp(body.transform.localPosition, new Vector3(body.transform.localPosition.x,traits.slideAnimationBodyHight,body.transform.localPosition.z),10*Time.deltaTime);
+        neck.localPosition = Vector3.Slerp(neck.localPosition,data_Center.neckFirstLocalPosition,10*Time.deltaTime);
+        traits.cam.rotation = Quaternion.LookRotation(Vector3.forward-Vector3.right+Vector3.down/2);
+        Motor_Animation_Data data = new Motor_Animation_Data();
+        data.up = 0;
+        data.currentNeckRotation = currentNeckRotation;
+        data.currentBodyRotation = currentBodyRotation;
+        data.currentFarmonRotation = currentFarmonRotation;
+        return data;
+    }
+    IEnumerator timer() 
+    {
+        yield return new WaitForSeconds(1/(data_Center.currentMoveSpeed/100));
+        traits.state_Machine.ChangeState(Motor_State_Type.Idel);
+    }
+}
