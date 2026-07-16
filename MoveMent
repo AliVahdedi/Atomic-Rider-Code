@@ -1,0 +1,54 @@
+using System.Collections;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class Motor_MoveMent : MonoBehaviour
+{
+    public Motor_Traits traits;
+    private Motor_Data_Center data_Center;
+    private CharacterController controller;
+    private Vector3 velocity;
+    private float streatSize;
+    private float moveShetab;
+    private float rotShetab;
+    private void Start()
+    {
+        StartCoroutine(OnStart());
+    }
+    IEnumerator OnStart() 
+    {
+        yield return null;
+        traits = FindAnyObjectByType<Motor_Traits>();
+        data_Center = traits.data_Center;
+        controller = FindAnyObjectByType<CharacterController>();
+        streatSize = traits.streetSize;
+    }
+    private void FixedUpdate()
+    {
+        traits = FindAnyObjectByType<Motor_Traits>();
+        data_Center = traits.data_Center;
+        controller = FindAnyObjectByType<CharacterController>();
+        streatSize = traits.streetSize;
+        data_Center = traits.data_Center;
+        traits = FindAnyObjectByType<Motor_Traits>();
+        velocity = Vector3.Slerp(controller.velocity,data_Center.moveVelocity,data_Center.currentSlerpSpeed*Time.fixedDeltaTime);
+        //velocity = data_Center.moveVelocity;
+        if (data_Center.isRotClamped) velocity.x = 0;
+        controller.Move(velocity * Time.fixedDeltaTime);
+        
+    }
+    public Motor_MoveMent_Data GetData() 
+    {
+        return data_Center.currentState.OnMoveMent();
+    }
+}
+public struct Motor_MoveMent_Data
+{
+    public bool isRotClamped;
+    public float moveSpeed;
+    public float rotSpeed;
+    public float record;
+    public float slerpSpeed;
+    public Vector3 velocity;
+}
+
