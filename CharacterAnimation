@@ -1,0 +1,62 @@
+using System.Collections;
+using UnityEngine;
+
+public class CharacterAnimation : MonoBehaviour
+{
+   public Motor_Traits traits;
+    public Animator animator;
+    private void Start()
+    {
+        StartCoroutine(OnStart());
+    }
+    IEnumerator OnStart() 
+    {
+        yield return null;
+        traits = FindAnyObjectByType<Motor_Traits>();
+        animator = GetComponent<Animator>();
+        //transform.parent=traits.body.transform;
+    }
+    private void OnAnimatorIK(int layerIndex)
+    {
+        traits.character.localPosition = traits.data_Center.characterFirstLocalPos +Quaternion.Inverse(traits.character.parent.rotation)*Vector3.up * traits.data_Center.characterUp;
+        animator.SetIKPositionWeight(AvatarIKGoal.RightHand,1);
+        animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1);
+        animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 1);
+        animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 1);
+        animator.SetIKPosition(AvatarIKGoal.RightHand, traits.handRight.position);
+        animator.SetIKPosition(AvatarIKGoal.LeftHand, traits.handLeft.position);
+        animator.SetIKPosition(AvatarIKGoal.RightFoot, traits.footRight.position);
+        animator.SetIKPosition(AvatarIKGoal.LeftFoot, traits.footLeft.position);
+        animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1);
+        animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1);
+        animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, 1);
+        animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 1);
+        animator.SetIKRotation(AvatarIKGoal.RightHand, traits.handRight.rotation);
+        animator.SetIKRotation(AvatarIKGoal.LeftHand, traits.handLeft.rotation);
+        animator.SetIKRotation(AvatarIKGoal.RightFoot, traits.footRight.rotation);
+        animator.SetIKRotation(AvatarIKGoal.LeftFoot, traits.footLeft.rotation);
+        animator.SetBoneLocalRotation(HumanBodyBones.Head,Quaternion.Inverse(animator.GetBoneTransform(HumanBodyBones.Head).parent.rotation)*traits.cam.rotation);
+        Quaternion currentRot = traits.neak.rotation;
+        currentRot.x = 0;
+        currentRot.z = 0;
+        currentRot.y = 0;
+        Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
+
+        Quaternion targetWorldRotation = traits.cam.rotation;
+
+        Quaternion headLocalRotation =
+            Quaternion.Inverse(head.parent.rotation) * targetWorldRotation;
+        Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+        animator.SetBoneLocalRotation(
+            HumanBodyBones.Hips,
+            /*Quaternion.Inverse(hips.parent.rotation) **/ traits.neak.rotation *Quaternion.Euler((Vector3.forward+Vector3.up)*-90)
+        );
+
+
+        animator.SetBoneLocalRotation(HumanBodyBones.Head, Quaternion.LookRotation(Vector3.forward)*Quaternion.Inverse(traits.cam.rotation));
+
+        //animator.SetBoneLocalRotation(HumanBodyBones.Hips,Quaternion.Inverse(animator.GetBoneTransform(HumanBodyBones.Hips).parent.rotation));
+
+
+    }
+}
