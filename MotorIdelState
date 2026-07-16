@@ -1,0 +1,208 @@
+using System;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class Motor_Idel_State : Motor_Base_State
+{
+    public Motor_Idel_State(Motor_Traits traits) : base(traits){}
+    private float currentRotMove2;
+    private float currentRotMoveCopy;
+    public override void OnEnter()
+    {
+        base.OnEnter();
+        print("Motor.OnEnter()==>Idel_State");
+    }
+    public override void OnUpdate()
+    {
+        base.OnUpdate();
+        if (data_Center.pressedSlide) { traits.state_Machine.ChangeState(Motor_State_Type.Slide); }
+        if(data_Center.pressedTackchragh) { traits.state_Machine.ChangeState(Motor_State_Type.Tackchargh); }
+        if (data_Center.jumps.Count > 0) {traits.state_Machine.ChangeState(Motor_State_Type.Jump); }
+    }
+    public override void OnFixedUpdate()
+    {
+        base.OnFixedUpdate();
+    }
+    public override void OnExit()
+    {
+        base.OnExit();
+    }
+    private float currentSteer = 0f;
+
+    public override Motor_MoveMent_Data OnMoveMent()
+    {
+        Motor_MoveMent_Data data = new Motor_MoveMent_Data();
+
+        float moveShetab = traits.moveShetab;
+        float streatSize = traits.streetSize;
+
+        // Forward speed
+        if (data_Center.currentMoveSpeed == 0)
+            data.moveSpeed = traits.firstMoveSpeed;
+        else
+            data.moveSpeed = data_Center.currentMoveSpeed + moveShetab*(traits.gasButton.axis * 4 - 0.8f-traits.breakButton.axis*12)* Time.deltaTime;
+
+        data.moveSpeed = Mathf.Clamp(data.moveSpeed, 90, traits.maxMoveSpeed);
+
+        // Input
+        float rightInput = traits.holdButtonRight.axis;
+        float leftInput = traits.holdButtonLeft.axis;
+        float steerInput = rightInput - leftInput/*Input.GetAxisRaw("Horizontal")*/;
+
+        // dead zone خیلی کم
+        if (Mathf.Abs(steerInput) < 0.02f)
+            steerInput = 0f;
+
+        // قدرت نهایی فرمون
+        float currentHandelingPower = data_Center.currentHandelingPower;
+        float steerPower = (1f + currentHandelingPower);
+
+        // target steer مستقیم از input
+        float targetSteer = steerInput;
+
+        // حس فرمان:
+        // وقتی input داریم سریع برسد
+        float steerEnterSpeed = 11f;
+
+        // وقتی input قطع می‌شود، برگشت فرمون کمی متفاوت باشد
+        float steerReleaseSpeed = 8f;
+
+        if (Mathf.Abs(targetSteer) > 0.001f)
+            currentSteer = Mathf.Lerp(currentSteer, targetSteer, steerEnterSpeed * Time.deltaTime);
+        else
+            currentSteer = Mathf.Lerp(currentSteer, 0f, steerReleaseSpeed * Time.deltaTime);
+
+        // curve برای حس بهتر
+        float curvedSteer = currentSteer * Mathf.Abs(currentSteer);
+
+        // سرعت فرمون وابسته به سرعت موتور
+        float speedRatio = data.moveSpeed / traits.maxMoveSpeed;
+        float sideMovePower = Mathf.Lerp(traits.firstRotSpeed, traits.maxRotSpeed, speedRatio);
+
+        Vector3 newVelocity = Vector3.forward * data.moveSpeed;
+        newVelocity.y = data_Center.moveVelocity.y;
+        newVelocity.x = curvedSteer * sideMovePower * steerPower;
+
+        // محدودیت خیابون
+        float posX = traits.controller.transform.position.x;
+
+        if (posX >= streatSize && newVelocity.x > 0f)
+            newVelocity.x = 0f;
+
+        if (posX <= -streatSize && newVelocity.x < 0f)
+            newVelocity.x = 0f;
+
+        data.velocity = newVelocity;
+        data.rotSpeed = sideMovePower;
+        data.isRotClamped = false;
+        data.slerpSpeed = 100000000;
+        data.record = data_Center.currentRecord + (data.moveSpeed * Time.deltaTime) / 3600f;
+
+        return data;
+    }
+    public override Motor_Animation_Data OnAnimation(Transform neck, Transform body, Transform farmon)
+    {
+        Quaternion currentNeckRotation = data_Center.currentNeckRotation;
+        Quaternion currentBodyRotation = data_Center.currentBodyRotation;
+        Quaternion currentFarmonRotation = data_Center.currentFarmonRotation;
+
+        Vector3 currentDirectBody = traits.controller.velocity;
+        currentDirectBody.x = 0;
+
+        float rotSpeedNormalized = data_Center.currentRotSpeed / traits.maxRotSpeed * 3f;
+
+        // ---------------- Visual Steer ----------------
+        float visualSteer = 0f;
+
+        if (traits.maxRotSpeed > 0.001f)
+            visualSteer = data_Center.moveVelocity.x / traits.maxRotSpeed;
+
+        // clamp
+        visualSteer = Mathf.Clamp(visualSteer, -1f, 1f);
+
+        // dead zone برای اینکه با مقدار خیلی کم نره چپ/راست
+        if (Mathf.Abs(visualSteer) < 0.08f)
+            visualSteer = 0f;
+
+        //Wheel
+        neck.rotation = Quaternion.Lerp(
+            neck.rotation,
+            currentNeckRotation,
+            (traits.neckRotSpeed * Mathf.Max(rotSpeedNormalized, 1f) + Math.Abs(traits.controller.velocity.y)) * Time.deltaTime
+        );
+
+        traits.wheelFront.localRotation *= Quaternion.Euler(-Vector3.forward * data_Center.currentMoveSpeed * 10 * Time.deltaTime);
+        traits.wheelBack.localRotation *= Quaternion.Euler(-Vector3.forward * data_Center.currentMoveSpeed * 10 * Time.deltaTime);
+
+        // ---------------- Neck ----------------
+        Quaternion projectBodyRotation = body.rotation;
+        projectBodyRotation.z = 0;
+        projectBodyRotation.y = 0;
+
+        currentNeckRotation = projectBodyRotation *
+                              Quaternion.Euler(Vector3.forward * -visualSteer * traits.maxRotNeckAnimation);
+
+        Quaternion projectNeckRotation = neck.rotation;
+        projectNeckRotation.x = 0;
+
+        // ---------------- Body ----------------
+        body.rotation = Quaternion.Slerp(body.rotation, currentBodyRotation, traits.bodyRotSpeed * Time.deltaTime);
+
+        currentBodyRotation = Quaternion.LookRotation(currentDirectBody) * projectNeckRotation;
+
+        // ---------------- Farmon ----------------
+        farmon.localRotation = Quaternion.Slerp(
+            farmon.localRotation,
+            currentFarmonRotation,
+            Mathf.Max(traits.farmonRotSpeed * Mathf.Max(rotSpeedNormalized, 1f), 8f) * Time.deltaTime
+        );
+
+        currentFarmonRotation = Quaternion.Euler(Vector3.up * visualSteer * traits.maxRotFarmonAnimation);
+
+        // ---------------- Position ----------------
+        body.transform.localPosition = Vector3.Lerp(
+            body.transform.localPosition,
+            new Vector3(body.transform.localPosition.x, data_Center.bodyFirstLocalPos.y, body.transform.localPosition.z),
+            10 * Time.deltaTime
+        );
+
+        neck.localPosition = Vector3.Slerp(
+            neck.localPosition,
+            data_Center.neckFirstLocalPosition,
+            25 * Time.deltaTime
+        );
+
+        Motor_Animation_Data data = new Motor_Animation_Data();
+        data.up = 0;
+        data.currentNeckRotation = currentNeckRotation;
+        data.currentBodyRotation = currentBodyRotation;
+        data.currentFarmonRotation = currentFarmonRotation;
+
+        return data;
+    }
+
+    public override Motor_Animation_Data OnAnimationCam(Transform neck, Transform body, Transform farmon)
+    {
+        Quaternion currentNeckRotation = data_Center.currentNeckRotation;
+        Quaternion currentBodyRotation = data_Center.currentBodyRotation;
+        Quaternion currentFarmonRotation = data_Center.currentFarmonRotation;
+        Vector3 currentDirectBody = traits.controller.velocity;
+        currentDirectBody.x = 0;
+        float rotSpeedNormalized = data_Center.currentRotSpeed / traits.maxRotSpeed * 3;
+        Quaternion projectBodyRotation = body.rotation;
+        traits.cam.rotation = Quaternion.Slerp(Quaternion.LookRotation(Vector3.forward + Vector3.down / 2), projectBodyRotation, 0.5f);
+        projectBodyRotation.z = 0;
+        projectBodyRotation.y = 0;
+        Quaternion projectNeckRotation = neck.rotation;
+        projectNeckRotation.x = 0;
+
+
+        neck.localPosition = Vector3.Slerp(neck.localPosition, data_Center.neckFirstLocalPosition, 25 * Time.deltaTime);
+        Motor_Animation_Data data = new Motor_Animation_Data();
+        data.up = 0;
+        data.currentNeckRotation = currentNeckRotation;
+        data.currentBodyRotation = currentBodyRotation;
+        data.currentFarmonRotation = currentFarmonRotation;
+        return data;
+    }
+}
