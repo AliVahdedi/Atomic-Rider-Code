@@ -1,0 +1,102 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Motor_Traits : MonoBehaviour
+{
+   
+    [Header("Main Components")]
+    public Motor_Data_Center data_Center;
+    public CharacterController controller;
+    public AudioSource audio;
+    public List<GameObject> meshs;
+    [Header("Input")]
+    public HoldButton slideButton;
+    public HoldButton tackchraghButton;
+    public HoldButton shootButton;
+    public HoldButton gasButton;
+    public HoldButton breakButton;
+    [Header("Get Dynamic Component")]
+    public Get_Dynamicly_Component dynamiclyComponent;
+    public Vector3 getDynamicComponentSize;
+    public Vector3 getDynamicComponentCenter;
+    [Header("StateMachine")]
+    public Motor_State_Machine state_Machine;
+    public List<Motor_Base_State> states;
+    [Header("MoveMent")]
+    public Motor_MoveMent moveMent;
+    public HoldButton holdButtonRight;
+    public HoldButton holdButtonLeft;
+    public float streetSize;
+    public float moveShetab=1f;
+    public float rotShetab = 1f;
+    public float maxMoveSpeed=600;
+    public float firstMoveSpeed=100;
+    public float maxRotSpeed;
+    public float firstRotSpeed;
+    public float netrojenPowerSpeed;
+    [Header("Audio")]
+    public float maxPitch;
+    [Header("______Animation______")]
+    public Vector3 neckFirstDirection;
+    public Vector3 chairLocalPos;
+    public float characterUp;
+    public Motor_Animation animation;
+    public Transform wheelFront;
+    public Transform wheelBack;
+    public Transform character;
+    public Transform neak;
+    public Transform cam;
+    public Transform body;
+    public Transform farmon;
+    public Transform handRight;
+    public Transform handLeft;
+    public Transform footRight;
+    public Transform footLeft;
+    [Header("MoveMent Animation")]
+    public float neckRotSpeed;
+    public float bodyRotSpeed;
+    public float farmonRotSpeed;
+    public float maxRotBodyAnimation=45;
+    public float maxRotFarmonAnimation=45;
+    public float maxRotNeckAnimation = 45;
+    [Header("Slide Animation")]
+    public float slideAnimationTime;
+    public float slideAnimationBodyHight = -2;
+    public Vector3 neckSlideDirection;
+    public Vector3 bodySlideDirection;
+    public Vector3 farmonSlideDirection;
+    [Header("TackChargh Animation")]
+    public float tackcharghUp;
+    public float tackchraghAnimationTime;
+    public float tackchraghAnimationBodyHight = 2;
+    public Vector3 neckTackchraghDirection;
+    public Vector3 bodyTackchraghDirection;
+    public Vector3 farmonTackchraghDirection;
+    public Vector3 neckTackcharghPosition;
+    [Header("Motor_Crash")]
+    public GameObject GameUI;
+    public GameObject EndGameUI;
+    private void Start()
+    {
+        streetSize = 70;
+        maxMoveSpeed=PlayerPrefs.GetFloat("TopSpeed")*3;
+        moveShetab=PlayerPrefs.GetFloat("MoveAcceleration");
+        rotShetab=PlayerPrefs.GetFloat("HandelingAcceleration")/2;
+        maxRotSpeed= PlayerPrefs.GetFloat("TopHandelign");
+        //foreach (GameObject GO in transform.GetComponentsInChildren<GameObject>()) 
+        //{
+        //    if (GO.name.Substring(0, 5) == "Neak") neak = GO.transform;
+        //    if (GO.name.Substring(0, 6) == "Farmon") farmon = GO.transform;
+        //}
+        //body = neak.parent;
+        controller = FindAnyObjectByType<CharacterController>();
+        data_Center = GetComponent<Motor_Data_Center>();
+        character = FindAnyObjectByType<CharacterAnimation>().transform;
+    }
+    private void Update()
+    {
+        cam = FindAnyObjectByType<Camera>().transform;
+
+        //cam=FindAnyObjectByType<Camera>().transform;
+    }
+}
