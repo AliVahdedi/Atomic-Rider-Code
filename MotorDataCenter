@@ -1,0 +1,105 @@
+using JetBrains.Annotations;
+using NUnit.Framework;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.Timeline;
+
+public class Motor_Data_Center : MonoBehaviour
+{
+    public Motor_Traits traits;
+    [Header("______Components______")]
+    public List<JumpSystem> jumps;
+    public bool onEarth;
+    [Header("______MoveMent______")]
+    public bool isRotClamped;
+    public float currentMoveSpeed;
+    public float currentRotSpeed;
+    public float currentRecord;
+    public float currentSlerpSpeed=1;
+    public float currentHandelingPower;
+    public Vector3 moveVelocity;
+    [Header("______Audio______")]
+    public float currentPitch;
+    [Header("______State Machine______")]
+    public Motor_State_Type state_Type;
+    public Motor_Base_State currentState;
+    [Header("Jump State")]
+    public bool isEndJumping;
+    public float endJumpingCurrentTime;
+    [Header("______Animation______")]
+    public Vector3 bodyFirstLocalPos;
+    public float characterUp;
+    public Vector3 characterFirstLocalPos;
+    public Quaternion currentFarmonRotation;
+    public Quaternion currentBodyRotation;
+    public Quaternion currentNeckRotation;
+    public Vector3 neckFirstLocalPosition;
+    [Header("Input")]
+    public bool pressedSlide;
+    public bool pressedTackchragh;
+    public bool pressedShoot;
+    private void Start()
+    {
+        traits = FindAnyObjectByType<Motor_Traits>();
+        traits.state_Machine.ChangeState(Motor_State_Type.Idel);
+        neckFirstLocalPosition = traits.neak.localPosition;
+        FindAnyObjectByType<CharacterAnimation>().transform.parent= traits.body;
+        FindAnyObjectByType<CharacterAnimation>().transform.rotation = Quaternion.LookRotation(traits.neckFirstDirection);
+        bodyFirstLocalPos=traits.body.localPosition;
+        
+    }
+    private void Update()
+    {
+        characterFirstLocalPos = traits.chairLocalPos;   
+        #region Components
+        Get_Dynamicly_Component_Data get_Dynamicly_Component_Data=traits.dynamiclyComponent.GetData();
+        jumps=get_Dynamicly_Component_Data.jumps;
+        onEarth=get_Dynamicly_Component_Data.onEarth;
+        #endregion
+        #region Inputs
+        pressedShoot = traits.shootButton.isPressed;
+        pressedTackchragh = traits.tackchraghButton.isPressed;
+        pressedSlide =traits.slideButton.isPressed;
+        #endregion
+        #region StateMachine
+        Motor_StateMachine_Data stateMachine_Data = traits.state_Machine.GetData();
+        currentState = stateMachine_Data.currentState;
+        state_Type = stateMachine_Data.state_Type;
+        #region Jump State
+        Motor_Jump_State_Data jump_State_Data = traits.state_Machine.GetState(Motor_State_Type.Jump).GetComponent<Motor_Jump_State>().GetData();
+        isEndJumping=jump_State_Data.isEndJumping;
+        endJumpingCurrentTime=jump_State_Data.endJumpingCurrentTime;
+        #endregion
+        #endregion
+        #region MoveMent
+        Motor_MoveMent_Data moveMent_Data =traits.moveMent.GetData();
+        isRotClamped=moveMent_Data.isRotClamped;
+        currentMoveSpeed = moveMent_Data.moveSpeed;
+        currentRotSpeed = moveMent_Data.rotSpeed;
+        if (moveMent_Data.record != 0)
+        {
+            currentRecord = moveMent_Data.record;
+        }
+        currentSlerpSpeed = moveMent_Data.slerpSpeed;
+        moveVelocity = moveMent_Data.velocity;
+        if (PlayerPrefs.GetInt("End") != 1)
+        {
+            PlayerPrefs.SetInt("Speed", (int)currentMoveSpeed / 3);
+            PlayerPrefs.SetFloat("Distance", Mathf.Round(currentRecord * 100) / 100);
+            PlayerPrefs.SetFloat("MoveSpeed", currentMoveSpeed);
+        }
+        #endregion
+        #region Animation
+        Motor_Animation_Data animation_Data=traits.animation.GetData();
+        characterUp = animation_Data.up;
+        currentNeckRotation = animation_Data.currentNeckRotation;
+        currentBodyRotation = animation_Data.currentBodyRotation;
+        currentFarmonRotation = animation_Data.currentFarmonRotation;
+        #endregion
+    }
+    private void LateUpdate()
+    {
+        
+    }
+}
