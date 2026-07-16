@@ -1,0 +1,68 @@
+using NUnit.Framework;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class Motor_State_Machine : MonoBehaviour
+{
+    public Motor_Traits traits;
+    private Motor_Data_Center data_Center;
+    public Motor_Base_State currentState;
+    Motor_StateMachine_Data data;
+    private void Start()
+    {
+        StartCoroutine(OnStart());
+    }
+    IEnumerator OnStart() 
+    {
+        yield return null;
+        traits = FindAnyObjectByType<Motor_Traits>();
+        data_Center = traits.data_Center;
+        ChangeState(Motor_State_Type.Idel);
+    }
+    public void ChangeState(Motor_State_Type type)
+    {
+        if (currentState != null) currentState.OnEnter();
+        foreach (Motor_Base_State state in traits.states)
+        {
+            if (state.type == type)
+            {
+                currentState = state;
+                data.currentState = state;
+                data.state_Type = currentState.type;
+                break;
+            }
+        }
+        currentState.OnExit();
+    }
+    public Motor_StateMachine_Data GetData()
+    {
+        return data;
+    }
+    private void Update()
+    {
+        if (currentState != null) currentState.OnUpdate();
+    }
+    private void FixedUpdate()
+    {
+        if (currentState != null) currentState.OnFixedUpdate();
+    }
+    public Motor_Base_State GetState(Motor_State_Type type) 
+    {
+        foreach (Motor_Base_State state in traits.states) 
+        {
+            if(state.type==type)return state;
+        }
+        return null;
+    }
+}
+public enum Motor_State_Type 
+{
+    Idel,Jump,Slide,Tackchargh
+}
+public struct Motor_StateMachine_Data 
+{
+    public Motor_State_Type state_Type;
+    public Motor_Base_State currentState;
+}
