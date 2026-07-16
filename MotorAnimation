@@ -1,0 +1,51 @@
+using System;
+using System.Collections;
+using UnityEngine;
+
+public class Motor_Animation : MonoBehaviour
+{
+    public Motor_Traits traits;
+    private Motor_Data_Center data_Center;
+    private Transform neck;
+    private Transform body;
+    private Transform farmon;
+    private Quaternion currentNeckRotation;
+    private Quaternion currentBodyRotation;
+    private Quaternion currentFarmonRotation;
+    public Motor_Animation_Data data;
+
+    private void Start()
+    {
+        StartCoroutine(OnStart());
+    }
+    IEnumerator OnStart() 
+    {
+        yield return null;
+        traits = FindAnyObjectByType<Motor_Traits>().GetComponent<Motor_Traits>();
+        data_Center = traits.data_Center;
+        body = traits.body;
+        farmon = traits.farmon;
+        neck = traits.neak;
+    }
+    private void Update()
+    {
+        
+        data = data_Center.currentState.OnAnimation(neck,body,farmon);
+
+    }
+    private void LateUpdate()
+    {
+        data_Center.currentState.OnAnimationCam(neck,body,farmon);
+    }
+    public Motor_Animation_Data GetData() 
+    {
+        return data;
+    }
+}
+public struct Motor_Animation_Data 
+{
+    public float up;
+    public Quaternion currentFarmonRotation;
+    public Quaternion currentBodyRotation;
+    public Quaternion currentNeckRotation;
+}
