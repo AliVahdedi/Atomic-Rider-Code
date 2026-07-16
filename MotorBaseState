@@ -1,0 +1,45 @@
+using System.Collections;
+using UnityEngine;
+
+public class Motor_Base_State : MonoBehaviour
+{
+    public Motor_State_Type type;
+    public Motor_Traits traits;
+    public Motor_Data_Center data_Center;
+    private void Start()
+    {
+        StartCoroutine(OnStart());
+    }
+    IEnumerator OnStart() 
+    {
+        yield return null;
+        traits = FindAnyObjectByType<Motor_Traits>();
+        data_Center = traits.data_Center;
+    }
+    public Motor_Base_State(Motor_Traits traits) 
+    {
+        this.traits = traits;
+    }
+    public virtual void OnEnter() { }
+    public virtual void OnUpdate() 
+    {
+        data_Center = traits.data_Center;
+
+    }
+    public virtual void OnFixedUpdate() { }
+    public virtual void OnExit() { }
+    public virtual Motor_MoveMent_Data OnMoveMent() 
+    {
+        
+        Motor_MoveMent_Data data = new Motor_MoveMent_Data();
+        return data;
+    }
+    public virtual Motor_Animation_Data OnAnimation(Transform neck,Transform body,Transform farmon) 
+    {
+        return new Motor_Animation_Data();
+    }
+    public virtual Motor_Animation_Data OnAnimationCam(Transform neck, Transform body, Transform farmon)
+    {
+        return new Motor_Animation_Data();
+    }
+}
